@@ -2,12 +2,11 @@ package org.example;
 
 import com.codeborne.selenide.Selenide;
 import com.codeborne.selenide.SelenideElement;
-import static com.codeborne.selenide.Condition.*;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class ProgrammingCourse extends Page {
+public class ProgrammingCourse extends Page implements HasAdditionalCourses {
     public static final String PROGRAMMING_COURSE_PAGE = "https://ithillel.ua/courses/programming";
 
     @Override
@@ -16,51 +15,37 @@ public class ProgrammingCourse extends Page {
     }
 
     @Override
-    public List<SelenideElement> getCourses() throws InterruptedException {
-        List<SelenideElement> allCourses = new ArrayList<>();
-        List<SelenideElement> allProgrammingLanguagesTabs = getAllProgrammingLanguagesTabs();
-        int index = 0;
-        for (SelenideElement programmingLanguageTab : allProgrammingLanguagesTabs) {
-            if (index != 0) {
-                programmingLanguageTab.click();
-            }
-            List<SelenideElement> coursesForThisProgrammingLanguage = getCoursesForProgrammingLanguage();
-            for (SelenideElement course : coursesForThisProgrammingLanguage) {
-                allCourses.add(course);
-            }
-            index++;
-        }
-        return allCourses;
-    }
-
-    public static void printCourses(ProgrammingCourse programmingCourse) throws InterruptedException {
-        List<SelenideElement> courses = programmingCourse.getCourses();
-        for (SelenideElement course : courses) {
-            SelenideElement courseTitle = course.$(".profession-bar_title");
-            System.out.println(courseTitle.getText());
-        }
-    }
-
-
-
-
-    @Override
-    public void getOportunities() {
-
+    public List<String> getCoursesTitles() {
+        List<SelenideElement> courses = this.getCourses();
+        return courses.stream()
+                .map(c -> c.$x("descendant::p[contains(@class, 'profession-bar_title')]"))
+                .map(SelenideElement::getOwnText)
+                .toList();
     }
 
     @Override
-    public void goToCategory(String category) {
+    public List<SelenideElement> getAdditionalCourses() {
+        List<SelenideElement> allAdditionalCourses = new ArrayList<>();
 
+        List<SelenideElement> allProfessionBlocks = Selenide.$$(".block-profession");
+
+        for (SelenideElement professionBlock : allProfessionBlocks) {
+
+            List<SelenideElement> professionGroups = professionBlock.$$(".block-profession_group");
+            if (professionGroups.size() == 2) {
+                List<SelenideElement> additionalCourses = professionGroups.get(1).$$(".block-profession_item");
+                allAdditionalCourses.addAll(additionalCourses);
+            }
+        }
+        return allAdditionalCourses;
     }
 
-    public List<SelenideElement> getAllProgrammingLanguagesTabs() {
-        List<SelenideElement> programmingLanguagesTabs = Selenide.$$(".subcategories_item");
-        return programmingLanguagesTabs;
-    }
-
-    public List<SelenideElement> getCoursesForProgrammingLanguage() {
-        List<SelenideElement> CoursesForProgrammingLanguage = Selenide.$$(".block-profession_item");
-        return CoursesForProgrammingLanguage;
+    @Override
+    public List<String> getAdditionalCoursesTitles() {
+        List<SelenideElement> allAdditionalCourses = getAdditionalCourses();
+        return allAdditionalCourses.stream()
+                .map((SelenideElement additionalCourse)
+                        -> additionalCourse.$(".profession-bar_title").getOwnText())
+                .toList();
     }
 }
